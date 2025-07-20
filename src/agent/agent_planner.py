@@ -3,6 +3,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from src.config import GROQ_API_KEY
 from src.agent.tools import all_tools
+from groq import Groq
+from src.config import GROQ_API_KEY
 
 class AgentPlanner:
     def __init__(self):
@@ -46,3 +48,38 @@ class AgentPlanner:
         except Exception as e:
             print(f"Agent execution error: {e}")
             return "Sorry, I ran into an issue while processing your request."
+def correct_transcription_with_llm(messy_text: str) -> str:
+    """Uses a fast LLM to correct a messy transcription into a likely command."""
+    if not messy_text:
+        return ""
+
+    client = Groq(api_key=GROQ_API_KEY)
+    
+    prompt = f"""
+    You are a transcription correction expert for a voice assistant.
+    Your task is to correct the user's raw, often messy, transcription into a clear, actionable command.
+    The user is likely to mention applications like Notepad, Chrome, or ask to search the web.
+    
+    Examples:
+    - Messy: "Apply warm, open, note-look." -> Corrected: "Open Notepad."
+    - Messy: "Chrome such for whether today." -> Corrected: "Search for weather today."
+    - Messy: "Hopen new file." -> Corrected: "Open new file."
+
+    Now, correct the following messy transcription. Output ONLY the corrected text and nothing else.
+
+    Messy: "{messy_text}"
+    Corrected:
+    """
+    
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama3-8b-8192", # Use a small, fast model for this
+            temperature=0.1,
+        )
+        corrected_text = chat_completion.choices[0].message.content.strip()
+        print(f"LLM Corrected Transcription: '{corrected_text}'")
+        return corrected_text
+    except Exception as e:
+        print(f"LLM Correction failed: {e}")
+        return messy_text # Fallback to the original messy text
