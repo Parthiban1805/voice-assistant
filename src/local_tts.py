@@ -1,8 +1,8 @@
-# src/local_tts.py (Corrected version 4 - Final)
+# src/local_tts.py
 import torch
 import sounddevice as sd
 import numpy as np
-import json # <--- Import the JSON library
+import json
 from TTS.api import TTS
 from piper.voice import PiperVoice
 
@@ -12,7 +12,6 @@ class LocalTTS:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Using device: {self.device}")
 
-        # --- Initialize Coqui XTTS (Primary Voice) ---
         print("Loading Coqui XTTS model...")
         try:
             model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
@@ -23,20 +22,13 @@ class LocalTTS:
             print(f"Could not load Coqui TTS model. Primary voice will be disabled. Error: {e}")
             self.primary_voice = None
 
-        # --- Initialize Piper (Feedback Voice) ---
         print("Loading Piper feedback voice model...")
         try:
-            # THIS IS THE DEFINITIVE FIX FOR PIPER
-            model_path = r"P:\development\voice assistant\src\piper_models"
-            config_path = f"{model_path}.json"
-            
-            # 1. Load the config JSON file into a dictionary
-            with open(config_path, "r") as f:
+            model_path = "piper_models/en_US-lessac-medium.onnx"
+            config_path = "piper_models/en_US-lessac-medium.onnx.json"            
+            with open(config_path, "r", encoding="utf-8") as f:
                 config_data = json.load(f)
-            
-            # 2. Pass the model path and the loaded config dictionary
             self.feedback_voice = PiperVoice(model_path, config=config_data)
-            
             if self.device == "cuda":
                 self.feedback_voice.to(self.device)
             print("Piper model loaded successfully.")
