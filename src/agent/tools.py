@@ -8,47 +8,69 @@ from email.mime.multipart import MIMEMultipart
 from src.config import SENDER_EMAIL, SENDER_APP_PASSWORD
 
 KNOWN_APPLICATIONS = {
-    # We use the exact path you provided for Chrome.
     "chrome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-    
-    # Notepad and Calculator are usually found automatically, but adding them is good practice.
     "notepad": "notepad.exe",
     "calculator": "calc.exe",
-    
-    # Add other applications you use frequently here.
-    # Example for Visual Studio Code (you would need to find the real path):
-    # "vscode": r"C:\Users\YourUser\AppData\Local\Programs\Microsoft VS Code\Code.exe"
 }
-# =====================================================================
+
+# ========================== THIS IS THE NEW PART ==========================
+# Create a dictionary to map easy-to-say profile names to the internal
+# directory names you found in Step 1.
+CHROME_PROFILES = {
+    # You MUST replace these with the real values you found from chrome://version
+    "Profile 94": "Default",  # Assuming this is your default profile
+    "Profile 106": "Profile 2", # Example for another profile
+    
+}
+DEFAULT_CHROME_PROFILE = "Profile 94" # The key from the dictionary above to use as a default
+# ==========================================================================
 
 
 @tool
-def open_application(app_name: str) -> str:
+def open_application(app_name: str, profile_name: str = None) -> str:
     """
-    Opens a specified application by looking up its full path from a known list.
-    Handles simple names like 'chrome', 'notepad', etc.
+    Opens a specified application. For Chrome, you can optionally specify a 
+    'profile_name' (e.g., 'parthiban s', 'work'). If no profile is given for
+    Chrome, a default one will be used.
     """
-    app_name_lower = app_name.lower().replace('.exe', '') # Standardize the input name
+    app_name_lower = app_name.lower().replace('.exe', '')
 
-    # Check if the requested app is in our known list
-    if app_name_lower in KNOWN_APPLICATIONS:
+    # --- SPECIAL LOGIC FOR CHROME ---
+    if app_name_lower == 'chrome':
+        path_to_chrome = KNOWN_APPLICATIONS.get('chrome')
+        if not path_to_chrome:
+            return "Error: The path for Chrome is not configured in tools.py."
+
+        profile_to_use = None
+        if profile_name:
+            profile_to_use = profile_name.lower()
+        else:
+            profile_to_use = DEFAULT_CHROME_PROFILE
+
+        internal_profile_dir = CHROME_PROFILES.get(profile_to_use)
+
+        if not internal_profile_dir:
+            return f"Error: Profile '{profile_to_use}' is not defined in the CHROME_PROFILES dictionary in tools.py."
+        
+        try:
+            command = [path_to_chrome, f'--profile-directory={internal_profile_dir}']
+            print(f"Opening Chrome with command: {command}")
+            subprocess.Popen(command)
+            return f"Successfully started Chrome with profile '{profile_to_use}'."
+        except Exception as e:
+            return f"Error opening Chrome with profile: {e}"
+    
+    # --- FALLBACK LOGIC FOR ALL OTHER APPLICATIONS ---
+    elif app_name_lower in KNOWN_APPLICATIONS:
         path_to_app = KNOWN_APPLICATIONS[app_name_lower]
         try:
             print(f"Opening '{app_name_lower}' using known path: {path_to_app}")
             subprocess.Popen([path_to_app])
             return f"Successfully started {app_name}."
-        except FileNotFoundError:
-            return f"Error: The path '{path_to_app}' for '{app_name}' was not found. Please check the path in tools.py."
         except Exception as e:
             return f"Error opening {app_name} with known path: {e}"
     else:
-        # If not in our list, try to run it directly as a fallback
-        try:
-            print(f"'{app_name}' not in known list. Attempting to run directly...")
-            subprocess.Popen([app_name])
-            return f"Successfully started {app_name} (found in system PATH)."
-        except Exception as e:
-            return f"Error: Could not find '{app_name}' in the known applications list or in the system PATH. Error: {e}"
+        return f"Error: Could not find '{app_name}'. It is not in the known applications list."
 
 @tool
 def search_web(query: str) -> str:
