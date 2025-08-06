@@ -19,7 +19,9 @@ def correct_transcription_with_llm(messy_text: str) -> str:
 **Rules:**
 1.  If the command is already clear, just repeat it.
 2.  Correct obvious typos (e.g., "note-look" -> "Notepad").
-3.  **CRITICAL:** If the command contains phrases like "flirt with", "chat with", or "send an email", DO NOT change these core actions. Preserve them and clean up the surrounding text if needed.
+1.  **DO NOT ALTER an already clear command.** If the input makes sense, output it EXACTLY as it is.
+2.  **NEVER simplify proper nouns, names, or technical terms.** If the input says "Aswin Ai&Ds", the output MUST be "Aswin Ai&Ds". If it says "Parthiban S", the output MUST be "Parthiban S".
+
 4.  If the text is truly nonsensical, find the most plausible command within it.
 
 **Examples:**
@@ -27,6 +29,13 @@ def correct_transcription_with_llm(messy_text: str) -> str:
 - Messy: "Chrome such for whether today." -> Corrected: "Search for weather today."
 - Messy: "start flirting with aswin." -> Corrected: "start flirting with aswin."
 - Messy: "send a mail to aswin that i am sick" -> Corrected: "send a mail to aswin that i am sick"
+**Examples of what TO do:**
+- Input: "Apply warm, open, note-look." -> Output: "Open Notepad."
+
+**Examples of what NOT to do:**
+- Input: "Flirt with Aswin Ai&Ds." -> Output: "Flirt with Aswin Ai&Ds." (This is CORRECT, you preserved it)
+- Input: "Open Chrome for Parthiban S." -> Output: "Open Chrome for Parthiban S." (This is CORRECT, you preserved it)
+- Input: "Flirt with Aswin Ai&Ds." -> Output: "flirt with aswin" (This is WRONG, you simplified the name)
 
 Now, correct the following messy transcription. Output ONLY the corrected text and nothing else.
 
