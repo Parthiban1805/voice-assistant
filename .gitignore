@@ -1,5 +1,6 @@
 voice-env/
-.env/
+.env
+google_credentials.json
 src/*.ppn
 
 __pycache__/
